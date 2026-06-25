@@ -1,0 +1,303 @@
+CREATE DATABASE SistemaBiblioteca;
+GO
+
+USE SistemaBiblioteca;
+GO
+
+CREATE TABLE Libros(
+LibroID INT PRIMARY KEY IDENTITY(1,1),
+Titulo VARCHAR(100)NOT NULL,
+Autor VARCHAR(100) NOT NULL,
+Categoria VARCHAR (50)
+);
+
+CREATE TABLE Usuarios(
+UsuarioID INT PRIMARY KEY IDENTITY(1,1),
+Nombre VARCHAR(100) NOT NULL,
+DNI VARCHAR(8)UNIQUE,
+Telefono VARCHAR(50)
+);
+
+CREATE TABLE Prestamos(
+PrestamoID INT PRIMARY KEY IDENTITY(1,1),
+LibroID INT NOT NULL,
+UsuarioID INT NOT NULL,
+FechaSalida DATE DEFAULT GETDATE(),
+
+FOREIGN KEY (LibroID) REFERENCES Libros(LibroID),
+FOREIGN KEY (UsuarioID) REFERENCES Usuarios(UsuarioID)
+);
+GO
+
+DBCC CHECKIDENT ('Libros', RESEED, 0);
+DBCC CHECKIDENT ('Prestamos', RESEED, 0);
+GO
+
+INSERT INTO	libros (Titulo, Autor, Categoria)VALUES
+('Cien años de soledad','Gabriel Garcia Marquez','Literatura'),
+('Maria','Jorge Isaacs','Romanticismo'),
+('Fundamentos de SQL', 'Itzik Ben-Gan', 'Sistemas'),
+('El Principito', 'Antoine de Saint-Exupéry', 'Fantasía'),
+('Libro de Prueba', 'Autor Fantasma', 'Aventura');
+
+INSERT INTO Usuarios (Nombre, DNI,Telefono)VALUES 
+('Ariana','61039281','950785023'),
+('Juan','40492650','958419963'),
+('Carlos','12345678', '999888777'),
+('Camila', '77889900', '987654321');
+
+
+INSERT INTO Prestamos(LibroID,UsuarioID,FechaSalida) VALUES
+(1, 2, GETDATE()), 
+(2, 2, GETDATE());
+GO
+
+--MOSTRAR TODAS LAS TABLAS
+SELECT *FROM Usuarios;
+SELECT*FROM Libros;
+SELECT*FROM Prestamos;
+
+SELECT Titulo,Categoria FROM Libros;
+
+--INNER JOIN
+SELECT 
+U.Nombre,
+L.Titulo,
+P.FechaSalida 
+FROM Prestamos AS P
+INNER JOIN Usuarios U ON P.UsuarioID=U.UsuarioID
+INNER JOIN Libros L ON P.LibroID=L.LibroID;
+
+--WHERE Y ORDER BY
+SELECT Titulo, Autor, Categoria
+FROM Libros
+WHERE Categoria='Sistemas';
+
+SELECT Titulo,Autor
+FROM Libros
+ORDER BY Titulo ASC;
+
+--LIKE (QEUE COMIENCEN CON E)
+SELECT Titulo,Autor 
+FROM Libros 
+WHERE TituLO lIKE'E%';
+
+--BETWEEN
+SELECT Titulo, Categoria 
+FROM Libros
+WHERE LibroID BETWEEN 1 AND 3;
+
+--IS NULL
+Select Nombre,DNI
+FROM Usuarios
+WHERE Telefono IS NULL;
+
+--FUNCIONES DE GRUPO
+SELECT COUNT (*) AS[Total de Libros]
+FROM Libros;
+
+--CLAUSULA GROUP BY
+SELECT Categoria, COUNT(*)AS [Cantidad de Libros]
+FROM Libros
+GROUP BY Categoria;
+
+--HAVING
+SELECT Categoria, COUNT(*) AS [Cantidad de Libros]
+FROM Libros
+GROUP BY Categoria
+HAVING COUNT(*) = 1;
+
+--USO DE CASE
+SELECT Titulo, Categoria,
+    CASE 
+        WHEN Categoria = 'Sistemas' THEN 'Tecnología'
+        ELSE 'General'
+    END AS [Clasificación]
+FROM Libros;
+
+--SUBCONSULTAS
+--EXISTS Y NOT EXITS
+SELECT Nombre, Telefono
+FROM Usuarios U
+WHERE EXISTS (
+    SELECT 1 
+    FROM Prestamos P
+    WHERE P.UsuarioID = U.UsuarioID
+);
+
+SELECT Titulo, Autor
+FROM Libros L
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM Prestamos P
+    WHERE P.LibroID = L.LibroID
+);
+--IN
+SELECT Titulo, Categoria
+FROM Libros
+WHERE LibroID IN (
+    SELECT LibroID 
+    FROM Prestamos
+);
+
+--LEFT JOIN
+SELECT 
+    U.Nombre AS NombreUsuario, 
+    L.Titulo AS TituloLibro, 
+    P.FechaSalida AS FechaPrestamo
+FROM Usuarios U
+LEFT JOIN Prestamos P ON U.UsuarioID = P.UsuarioID
+LEFT JOIN Libros L ON P.LibroID = L.LibroID;
+
+--RIGHT JOIN
+SELECT 
+    L.Titulo AS TituloLibro, 
+    U.Nombre AS NombreUsuario, 
+    P.FechaSalida AS FechaPrestamo
+FROM Prestamos P
+RIGHT JOIN Libros L ON P.LibroID = L.LibroID
+LEFT JOIN Usuarios U ON P.UsuarioID = U.UsuarioID;
+
+--FULL JOIN
+SELECT 
+    L.LibroID AS IdLibro, 
+    L.Titulo AS TituloLibro, 
+    P.PrestamoID AS IdPrestamo, 
+    P.FechaSalida AS FechaPrestamo
+FROM Libros L
+FULL JOIN Prestamos P ON L.LibroID = P.LibroID;
+
+--CROSS JOIN
+SELECT 
+    U.Nombre AS NombreUsuario, 
+    L.Titulo AS TituloLibro
+FROM Usuarios U
+CROSS JOIN Libros L;
+
+--UNION 
+SELECT 
+    Nombre AS NombrePersona, 
+    'Es Usuario' AS TipoDato
+FROM Usuarios 
+UNION
+SELECT 
+    Titulo AS NombrePersona, 
+    'Es Libro' AS TipoDato
+FROM Libros;
+
+--SEMANA 07
+---UPDATE -ACTUALIZAR 
+
+UPDATE Usuarios
+SET Telefono = '999111222'
+WHERE Nombre = 'Ariana';
+
+---DELETE
+DELETE FROM Libros 
+WHERE Titulo = 'Libro de Prueba';
+
+--PIVOT
+SELECT *
+FROM (
+    SELECT LibroID, Categoria
+    FROM Libros
+) AS FuenteDatos
+PIVOT (
+    COUNT(LibroID)
+    FOR Categoria IN ([Literatura], [Fantasía], [Sistemas], [Romanticismo])
+) AS TablaPivote;
+
+
+--SEMANA09
+--RELACION DE UNO A MUCHOS
+SELECT 
+    U.Nombre AS Usuario,
+    L.Titulo AS Libro,
+    P.FechaSalida
+FROM Prestamos P
+INNER JOIN Usuarios U
+    ON P.UsuarioID = U.UsuarioID
+INNER JOIN Libros L
+    ON P.LibroID = L.LibroID;
+
+    --SEMANA 11
+
+    --COUNT
+    SELECT COUNT(*) AS TotalUsuarios 
+    FROM Usuarios;
+
+    --MAX Y MIN
+    SELECT 
+    MAX(LibroID) AS IdMasAlto,
+    MIN(LibroID) AS IdMasBajo
+    FROM Libros;
+
+    --GROUP BY
+    SELECT 
+    Categoria, 
+    COUNT(*) AS CantidadLibros
+    FROM Libros
+    GROUP BY Categoria;
+
+    --HAVING
+    SELECT 
+    Categoria, 
+    COUNT(*) AS CantidadLibros
+FROM Libros
+GROUP BY Categoria
+HAVING COUNT(*) = 1;
+
+
+--SEMANA 12
+
+
+---FUNCIONES DE FECHA 
+
+--DAY,MONTH,YEAR
+SELECT
+PrestamoID,
+FechaSalida,
+DAY(FechaSalida) AS Dia,
+MONTH(FechaSalida) AS Mes,
+YEAR(FechaSalida) AS Año
+FROM Prestamos;
+
+--DATEIFF
+
+SELECT
+PrestamoID,
+FechaSalida,
+DATEDIFF(DAY, FechaSalida, GETDATE()) AS DiasTranscurridos
+FROM Prestamos;
+
+--FUNCIONES DE CADENA 
+
+--CONCAT
+SELECT CONCAT(Nombre, ' - DNI: ', DNI) AS DatosUsuario
+FROM Usuarios;
+
+--LEN
+SELECT Nombre,
+       LEN(Nombre) AS LongitudNombre
+FROM Usuarios;
+
+--SUBSTRING
+SELECT Nombre,
+       SUBSTRING(Nombre,1,3) AS InicioNombre
+FROM Usuarios;
+
+--LOWER
+SELECT Nombre,
+       LOWER(Nombre) AS NombreMinuscula,
+       UPPER(Nombre) AS NombreMayuscula
+FROM Usuarios;
+
+---FUNCIONES DE CONVERSION
+
+SELECT Nombre,
+       CAST(DNI AS INT) AS DNIEntero
+FROM Usuarios;
+
+SELECT FechaSalida,
+       CONVERT(VARCHAR, FechaSalida, 103) AS FechaConvertida
+FROM Prestamos;
